@@ -1,0 +1,27 @@
+on:
+  push:
+    workflows: build-site
+    filter:
+      branches: main
+
+workflows:
+  build-site:
+    tasks:
+      - name: build-site
+        cubes:
+          - name: install-deps
+            image: node:22-slim
+            script:
+              - npm ci
+
+          - name: build-site
+            image: node:22-slim
+            script:
+              - npm run build -- --outDir site
+
+          - name: publish-site
+            script:
+              - git checkout -b release
+              - git add site
+              - "git commit -m 'feat: release'"
+              - git push origin release -f
