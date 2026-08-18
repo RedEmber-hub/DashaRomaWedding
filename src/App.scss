@@ -1,0 +1,681 @@
+.app {
+  width: 100%;
+  min-height: 100dvh;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  &__main {
+    position: relative;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    width: 100%;
+    min-height: 100dvh;
+
+    padding: 40px 20px;
+
+    overflow: hidden;
+
+    // -----------------------------------------
+    // Фоновый декоративный слой
+    // -----------------------------------------
+
+    &::before {
+      content: '';
+
+      position: absolute;
+      inset: 0;
+
+      z-index: 0;
+
+      background-image: url('/komp.png');
+      background-repeat: no-repeat;
+      background-position: top center;
+      background-size: 100% auto;
+
+      opacity: 0;
+
+      animation: mainBackgroundAppear 1.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+
+      pointer-events: none;
+    }
+
+    // -----------------------------------------
+    // Контент поверх фона
+    // -----------------------------------------
+
+    > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    // -----------------------------------------
+    // Все элементы первого экрана
+    // появляются одновременно
+    // -----------------------------------------
+
+    &-title,
+    &-name,
+    &-description,
+    &-date,
+    &-time,
+    &-subtitle,
+    &-countdown {
+      opacity: 0;
+
+      animation: mainAppear 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+    }
+
+    // -----------------------------------------
+    // Верхний текст
+    // -----------------------------------------
+
+    &-title {
+      margin: 0 0 18px;
+
+      font-family: 'Cormorant Infant', serif;
+      font-size: 22px;
+      font-weight: 400;
+      line-height: 1.25;
+      letter-spacing: 0.22em;
+      text-align: center;
+
+      color: #111;
+    }
+
+    // -----------------------------------------
+    // Имена
+    // -----------------------------------------
+
+    &-name {
+      margin: 0;
+
+      font-family: 'Cormorant Infant', serif;
+      font-size: 68px;
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: 0.04em;
+      text-align: center;
+
+      color: transparent;
+
+      background: linear-gradient(
+        105deg,
+        #111 0%,
+        #111 47.5%,
+        rgba(255, 255, 255, 0.85) 49%,
+        #fff 50%,
+        rgba(255, 255, 255, 0.85) 51%,
+        #111 52.5%,
+        #111 100%
+      );
+
+      background-size: 220% 100%;
+      background-position: 120% 0;
+
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+
+      animation:
+        mainNameAppear 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both,
+        nameShine 7s cubic-bezier(0.4, 0, 0.2, 1) 1.8s infinite;
+
+      &-amp {
+        display: inline-block;
+
+        margin: 0 0.12em;
+
+        font-size: 0.6em;
+
+        color: inherit;
+      }
+    }
+
+    // -----------------------------------------
+    // Описание
+    // -----------------------------------------
+
+    &-description {
+      margin: 14px 0 0;
+
+      max-width: 560px;
+
+      font-family: 'Cormorant Infant', serif;
+      font-size: 20px;
+      font-weight: 400;
+      line-height: 1.35;
+      letter-spacing: 0.12em;
+      text-align: center;
+
+      color: #111;
+    }
+
+    // -----------------------------------------
+    // Дата
+    // -----------------------------------------
+
+    &-date {
+      margin: 38px 0 0;
+
+      font-family: 'Cormorant Infant', serif;
+      font-size: 34px;
+      font-weight: 400;
+      line-height: 1.2;
+      letter-spacing: 0.08em;
+      text-align: center;
+
+      color: #111;
+    }
+
+    // -----------------------------------------
+    // Время / адрес
+    // -----------------------------------------
+
+    &-time {
+      margin: 10px 0 0;
+
+      font-family: 'Cormorant Infant', serif;
+      font-size: 20px;
+      font-weight: 400;
+      line-height: 1.25;
+      letter-spacing: 0.18em;
+      text-align: center;
+
+      color: #111;
+
+      & + & {
+        margin-top: 4px;
+      }
+
+      &:last-of-type {
+        margin-top: 4px;
+      }
+    }
+
+    // -----------------------------------------
+    // Ждём вас
+    // -----------------------------------------
+
+    &-subtitle {
+      margin: 34px 0 0;
+
+      font-family: 'Cormorant Infant', serif;
+      font-size: 22px;
+      font-weight: 400;
+      line-height: 1.25;
+      letter-spacing: 0.2em;
+      text-align: center;
+
+      color: #111;
+    }
+
+    // -----------------------------------------
+    // Countdown
+    // -----------------------------------------
+
+    &-countdown {
+      margin-top: 14px;
+    }
+  }
+
+  // -----------------------------------------
+  // Timeline
+  // -----------------------------------------
+
+  &__timeline {
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    padding: 150px 150px;
+
+    gap: 70px;
+
+    background-image: url('/bg3.png');
+    background-repeat: no-repeat;
+    background-position: top center;
+    background-size: 100% auto;
+
+    &-title {
+      margin: 0;
+
+      font-family: 'Cormorant Infant', serif;
+      font-size: 35px;
+      font-weight: 500;
+      line-height: 1;
+      text-align: center;
+      letter-spacing: 0;
+
+      color: #000;
+
+      opacity: 0;
+
+      animation: appearFromTop 1.1s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both;
+    }
+  }
+}
+
+// =====================================================
+// Появление всего контента
+// =====================================================
+
+@keyframes mainAppear {
+  from {
+    opacity: 0;
+
+    transform: translateY(30px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+
+    transform: translateY(0) scale(1);
+  }
+}
+
+// =====================================================
+// Появление имён
+// =====================================================
+
+@keyframes mainNameAppear {
+  from {
+    opacity: 0;
+
+    transform: translateY(35px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+
+    transform: translateY(0) scale(1);
+  }
+}
+
+// =====================================================
+// Появление фоновой картинки
+// =====================================================
+
+@keyframes mainBackgroundAppear {
+  from {
+    opacity: 0;
+
+    transform: scale(1.03);
+  }
+
+  to {
+    opacity: 1;
+
+    transform: scale(1);
+  }
+}
+
+// =====================================================
+// Появление заголовка Timeline
+// =====================================================
+
+@keyframes appearFromTop {
+  from {
+    opacity: 0;
+
+    transform: translateY(-40px);
+  }
+
+  to {
+    opacity: 1;
+
+    transform: translateY(0);
+  }
+}
+
+// =====================================================
+// Блик по именам — каждые 7 секунд
+// =====================================================
+
+@keyframes nameShine {
+  0% {
+    background-position: 120% 0;
+  }
+
+  13% {
+    background-position: -20% 0;
+  }
+
+  100% {
+    background-position: -20% 0;
+  }
+}
+
+// =====================================================
+// TABLET
+// 768px — 1199px
+// =====================================================
+
+@media (min-width: 768px) and (max-width: 1199px) {
+  .app {
+    &__main {
+      padding: 40px 40px;
+
+      // Планшетный фон
+      &::before {
+        background-image: url('/bg-768.png');
+        background-repeat: no-repeat;
+        background-position: top center;
+        background-size: 100% auto;
+      }
+
+      &-title {
+        margin-bottom: 16px;
+
+        font-size: 19px;
+        letter-spacing: 0.18em;
+      }
+
+      &-name {
+        font-size: 54px;
+        letter-spacing: 0.03em;
+      }
+
+      &-description {
+        max-width: 500px;
+
+        font-size: 18px;
+        letter-spacing: 0.1em;
+      }
+
+      &-date {
+        margin-top: 30px;
+
+        font-size: 30px;
+        letter-spacing: 0.06em;
+      }
+
+      &-time {
+        font-size: 18px;
+        letter-spacing: 0.14em;
+      }
+
+      &-subtitle {
+        margin-top: 28px;
+
+        font-size: 20px;
+        letter-spacing: 0.16em;
+      }
+
+      &-countdown {
+        margin-top: 10px;
+      }
+    }
+
+    &__timeline {
+      padding: 110px 50px;
+
+      gap: 60px;
+
+      &-title {
+        font-size: 32px;
+      }
+    }
+  }
+}
+
+// =====================================================
+// MOBILE
+// 391px — 767px
+// =====================================================
+
+@media (min-width: 391px) and (max-width: 767px) {
+  .app {
+    &__main {
+      padding: 30px 20px;
+
+      // Обычный мобильный фон
+      &::before {
+        background-image: url('/bg.png');
+
+        background-repeat: no-repeat;
+        background-position: center top;
+        background-size: auto 100%;
+      }
+
+      &-title {
+        margin-bottom: 12px;
+
+        font-size: 16px;
+        line-height: 1.2;
+        letter-spacing: 0.16em;
+      }
+
+      &-name {
+        font-size: clamp(38px, 11vw, 52px);
+        line-height: 1;
+        letter-spacing: 0.02em;
+
+        &-amp {
+          margin: 0 0.08em;
+
+          font-size: 0.55em;
+        }
+      }
+
+      &-description {
+        margin-top: 12px;
+
+        max-width: 330px;
+
+        font-size: 15px;
+        line-height: 1.35;
+        letter-spacing: 0.08em;
+      }
+
+      &-date {
+        margin-top: 24px;
+
+        font-size: 24px;
+        line-height: 1.15;
+        letter-spacing: 0.05em;
+      }
+
+      &-time {
+        margin-top: 8px;
+
+        max-width: 320px;
+
+        font-size: 16px;
+        line-height: 1.25;
+        letter-spacing: 0.1em;
+
+        & + & {
+          margin-top: 3px;
+        }
+      }
+
+      &-subtitle {
+        margin-top: 24px;
+
+        font-size: 18px;
+        line-height: 1.2;
+        letter-spacing: 0.14em;
+      }
+
+      &-countdown {
+        margin-top: 8px;
+
+        width: 100%;
+      }
+    }
+
+    &__timeline {
+      padding: 90px 20px;
+
+      gap: 45px;
+
+      background-size: auto 100%;
+      background-position: top center;
+
+      &-title {
+        font-size: 28px;
+        line-height: 1.1;
+      }
+    }
+  }
+}
+
+// =====================================================
+// 482px — 767px
+// =====================================================
+
+@media (min-width: 482px) and (max-width: 767px) {
+  .app {
+    &__main {
+      &::before {
+        background-image: url('/bg-482.png');
+
+        background-repeat: no-repeat;
+        background-position: top center;
+        background-size: 100% auto;
+      }
+    }
+  }
+}
+
+// =====================================================
+// SMALL MOBILE
+// 320px — 390px
+// =====================================================
+
+@media (max-width: 390px) {
+  .app {
+    &__main {
+      min-height: 100dvh;
+
+      padding: 110px 20px 30px;
+
+      justify-content: center;
+
+      // Маленький мобильный фон
+      &::before {
+        background-image: url('/mobile-bg.png');
+
+        background-repeat: no-repeat;
+        background-position: top center;
+        background-size: 100% auto;
+      }
+
+      // -----------------------------------------
+      // Верхний текст
+      // -----------------------------------------
+
+      &-title {
+        margin: 0 0 16px;
+
+        font-size: 10px;
+        line-height: 1.2;
+        letter-spacing: 0.18em;
+      }
+
+      // -----------------------------------------
+      // Имена
+      // -----------------------------------------
+
+      &-name {
+        white-space: nowrap;
+
+        font-size: 30px;
+        line-height: 1;
+        letter-spacing: 0.03em;
+
+        &-amp {
+          margin: 0 0.08em;
+
+          font-size: 0.55em;
+        }
+      }
+
+      // -----------------------------------------
+      // Описание
+      // -----------------------------------------
+
+      &-description {
+        margin-top: 18px;
+
+        max-width: 250px;
+
+        font-size: 10px;
+        line-height: 1.45;
+        letter-spacing: 0.12em;
+      }
+
+      // -----------------------------------------
+      // Дата
+      // -----------------------------------------
+
+      &-date {
+        margin-top: 22px;
+
+        font-size: 20px;
+        line-height: 1;
+        letter-spacing: 0.08em;
+      }
+
+      // -----------------------------------------
+      // Время / адрес
+      // -----------------------------------------
+
+      &-time {
+        margin-top: 9px;
+
+        max-width: 260px;
+
+        font-size: 10px;
+        line-height: 1.25;
+        letter-spacing: 0.14em;
+
+        & + & {
+          margin-top: 4px;
+        }
+      }
+
+      // -----------------------------------------
+      // Ждём вас
+      // -----------------------------------------
+
+      &-subtitle {
+        margin-top: 22px;
+
+        font-size: 11px;
+        line-height: 1;
+        letter-spacing: 0.18em;
+      }
+
+      // -----------------------------------------
+      // Countdown
+      // -----------------------------------------
+
+      &-countdown {
+        margin-top: 18px;
+
+        width: 100%;
+      }
+    }
+
+    // -----------------------------------------
+    // Timeline
+    // -----------------------------------------
+
+    &__timeline {
+      padding: 60px 10px;
+
+      &-title {
+        font-size: 24px;
+      }
+    }
+  }
+}

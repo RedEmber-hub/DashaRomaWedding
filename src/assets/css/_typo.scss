@@ -1,0 +1,15 @@
+@use 'mixins' as *; //глобальный namespace
+// @use 'mixins' as mixins; это именованный namespace()
+
+.text-main {
+  @include text-main();
+  //   @include text-main(); если бы был именованный namespace, то мы бы писали по названию namespace, т.е. @include mixins.text-main();
+}
+
+.caption {
+  @include caption();
+}
+
+.text {
+  @include text();
+}

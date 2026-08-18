@@ -1,0 +1,86 @@
+*,
+*:before,
+*:after {
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Cormorant Infant', serif;
+}
+
+// обязательно
+html {
+  height: 100%;
+  width: 100%;
+  -webkit-text-size-adjust: none;
+  -webkit-tap-highlight-color: transparent;
+  margin-right: calc(-1 * (100vw - 100%)) !important;
+}
+
+#root {
+  height: 100dvh;
+  background-color: var(--color-primary);
+
+  display: flex;
+}
+
+// обязательно
+img,
+video {
+  height: 100%;
+  max-width: 100%;
+}
+
+svg {
+  display: flex;
+}
+
+//троеточие после текста
+.text-truncated {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.skeleton {
+  height: 44px;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+
+  &--animated {
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -150px;
+      height: 100%;
+      width: 150px;
+      background: linear-gradient(to right, rgba(255, 255, 255, 0) 0%, #e8e8e8 50%, rgba(255, 255, 255, 0) 100%);
+      // loadSkeleton - имя анимации
+      animation: loadSkeleton 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+  }
+}
+
+// анимация скелетона
+@keyframes loadSkeleton {
+  from {
+    left: -150px;
+  }
+
+  to {
+    left: 100%;
+  }
+}
