@@ -65,6 +65,7 @@ const CURVE_OFFSET = 70;
 */
 
 const HEART_SMOOTHING = 0.08;
+const HEART_EPSILON = 0.0005;
 
 /*
 |--------------------------------------------------------------------------
@@ -209,14 +210,12 @@ function getTimePathLength(currentMinutes: number, pathLengths: number[]) {
 
   for (let index = 0; index < events.length - 1; index++) {
     const startTime = timeToMinutes(events[index].time);
-
     const endTime = timeToMinutes(events[index + 1].time);
 
     if (currentMinutes >= startTime && currentMinutes <= endTime) {
       const timeProgress = (currentMinutes - startTime) / (endTime - startTime);
 
       const segmentStart = pathLengths[index];
-
       const segmentEnd = pathLengths[index + 1];
 
       return segmentStart + (segmentEnd - segmentStart) * timeProgress;
@@ -229,11 +228,6 @@ function getTimePathLength(currentMinutes: number, pathLengths: number[]) {
 /*
 |--------------------------------------------------------------------------
 | Scroll → progress
-|--------------------------------------------------------------------------
-|
-| Используем уже трансформированный canvas.
-| Поэтому расчёт всегда идёт по фактическому размеру
-| таймлайна на текущем экране.
 |--------------------------------------------------------------------------
 */
 
@@ -255,13 +249,16 @@ function getScrollProgress(canvas: HTMLElement) {
 
 export default function TimeLine({ isStarted }: TimeLineProps) {
   const viewportRef = useRef<HTMLDivElement>(null);
-
   const canvasRef = useRef<HTMLDivElement>(null);
 
   const pathRef = useRef<SVGPathElement>(null);
+  const progressPathRef = useRef<SVGPathElement>(null);
+
+  const heartRef = useRef<HTMLDivElement>(null);
+
+  const pointRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const targetProgressRef = useRef(0);
-
   const currentProgressRef = useRef(0);
 
   const scrollStopTimeoutRef = useRef<number | null>(null);
@@ -269,14 +266,6 @@ export default function TimeLine({ isStarted }: TimeLineProps) {
   const beatTimeoutRef = useRef<number | null>(null);
 
   const [scale, setScale] = useState(1);
-
-  const [progress, setProgress] = useState(0);
-
-  const [heartPosition, setHeartPosition] = useState({
-    x: CENTER_X,
-    y: 0,
-  });
-
   const [heartBeat, setHeartBeat] = useState(false);
 
   const [visibleItems, setVisibleItems] = useState<Set<number>>(new Set());
@@ -290,16 +279,6 @@ export default function TimeLine({ isStarted }: TimeLineProps) {
   /*
   |--------------------------------------------------------------------------
   | Адаптивный scale
-  |--------------------------------------------------------------------------
-  |
-  | Десктопная ширина = 800px.
-  |
-  | Например:
-  |
-  | 800px → scale 1
-  | 600px → scale 0.75
-  | 400px → scale 0.5
-  | 320px → scale 0.4
   |--------------------------------------------------------------------------
   */
 
@@ -331,16 +310,23 @@ export default function TimeLine({ isStarted }: TimeLineProps) {
 
   /*
   |--------------------------------------------------------------------------
-  | Управление сердцем
+  | Сердце + progress path
+  |--------------------------------------------------------------------------
+  |
+  | ВАЖНО:
+  | Здесь нет setState на каждом animation frame.
+  | Позиция сердца и SVG обновляются напрямую через DOM.
   |--------------------------------------------------------------------------
   */
 
   useEffect(() => {
     const pathElement = pathRef.current;
+    const progressPathElement = progressPathRef.current;
 
     const canvas = canvasRef.current;
+    const heartElement = heartRef.current;
 
-    if (!pathElement || !canvas) {
+    if (!pathElement || !progressPathElement || !canvas || !heartElement) {
       return;
     }
 
@@ -348,25 +334,130 @@ export default function TimeLine({ isStarted }: TimeLineProps) {
 
     const pointPathLengths = getPointPathLengths(pathElement, points);
 
+    let animationFrame = 0;
+    let isAnimating = false;
+    let lastRenderedProgress = -1;
+
     /*
     |--------------------------------------------------------------------------
-    | Scroll target
+    | Обновление DOM
     |--------------------------------------------------------------------------
     */
 
-    const updateScrollTarget = () => {
-      if (isStarted) {
+    const updateVisuals = (nextProgress: number) => {
+      const currentLength = pathLength * nextProgress;
+
+      const point = pathElement.getPointAtLength(currentLength);
+
+      /*
+       * Пройденная часть линии.
+       *
+       * pathLength="1" позволяет использовать
+       * progress напрямую в диапазоне 0..1.
+       */
+      progressPathElement.style.strokeDashoffset = String(1 - nextProgress);
+
+      /*
+       * Положение сердца.
+       *
+       * translate3d вместо left/top:
+       * движение выполняется через transform.
+       */
+      heartElement.style.transform = `translate3d(${point.x}px, ${point.y}px, 0) ` + 'translate3d(-50%, -50%, 0)';
+    };
+
+    /*
+    |--------------------------------------------------------------------------
+    | Обновление точек без React render
+    |--------------------------------------------------------------------------
+    */
+
+    const updatePoints = (nextProgress: number) => {
+      pointPathLengths.forEach((pointPathLength, index) => {
+        const pointElement = pointRefs.current[index];
+
+        if (!pointElement) {
+          return;
+        }
+
+        const pointProgress = pathLength > 0 ? pointPathLength / pathLength : 0;
+
+        const isCurrent = Math.abs(nextProgress - pointProgress) < 0.003;
+
+        const isPassed = nextProgress > pointProgress;
+
+        pointElement.classList.toggle('timeline__point--passed', isPassed);
+
+        pointElement.classList.toggle('timeline__point--current', isCurrent);
+      });
+    };
+
+    /*
+    |--------------------------------------------------------------------------
+    | Запуск RAF только когда действительно есть движение
+    |--------------------------------------------------------------------------
+    */
+
+    const animate = () => {
+      const targetProgress = targetProgressRef.current;
+
+      const currentProgress = currentProgressRef.current;
+
+      const difference = targetProgress - currentProgress;
+
+      /*
+       * Сердце практически дошло до цели.
+       * Останавливаем RAF.
+       */
+      if (Math.abs(difference) < HEART_EPSILON) {
+        currentProgressRef.current = targetProgress;
+
+        updateVisuals(targetProgress);
+        updatePoints(targetProgress);
+
+        lastRenderedProgress = targetProgress;
+
+        animationFrame = 0;
+        isAnimating = false;
+
         return;
       }
 
-      targetProgressRef.current = getScrollProgress(canvas);
+      const nextProgress = currentProgress + difference * HEART_SMOOTHING;
+
+      currentProgressRef.current = nextProgress;
 
       /*
-      |--------------------------------------------------------------------------
-      | Heartbeat
-      |--------------------------------------------------------------------------
-      */
+       * Не делаем лишний DOM update,
+       * если изменение слишком маленькое.
+       */
+      if (Math.abs(nextProgress - lastRenderedProgress) > 0.0001) {
+        updateVisuals(nextProgress);
+        updatePoints(nextProgress);
 
+        lastRenderedProgress = nextProgress;
+      }
+
+      animationFrame = requestAnimationFrame(animate);
+    };
+
+    const startAnimation = () => {
+      if (isAnimating) {
+        return;
+      }
+
+      isAnimating = true;
+
+      animationFrame = requestAnimationFrame(animate);
+    };
+
+    /*
+    |--------------------------------------------------------------------------
+    | Heartbeat
+    |--------------------------------------------------------------------------
+    */
+
+    const scheduleHeartbeat = () => {
       if (scrollStopTimeoutRef.current !== null) {
         window.clearTimeout(scrollStopTimeoutRef.current);
       }
@@ -386,7 +477,54 @@ export default function TimeLine({ isStarted }: TimeLineProps) {
       }, HEART_BEAT_DELAY);
     };
 
-    if (!isStarted) {
+    /*
+    |--------------------------------------------------------------------------
+    | Scroll
+    |--------------------------------------------------------------------------
+    */
+
+    const updateScrollTarget = () => {
+      if (isStarted) {
+        return;
+      }
+
+      const nextTarget = getScrollProgress(canvas);
+
+      targetProgressRef.current = nextTarget;
+
+      startAnimation();
+      scheduleHeartbeat();
+    };
+
+    /*
+    |--------------------------------------------------------------------------
+    | После Countdown — управление временем
+    |--------------------------------------------------------------------------
+    */
+
+    let timeInterval: number | null = null;
+
+    if (isStarted) {
+      const updateTimeTarget = () => {
+        const currentMinutes = getCurrentMinutes();
+
+        const targetLength = getTimePathLength(currentMinutes, pointPathLengths);
+
+        const targetProgress = pathLength > 0 ? targetLength / pathLength : 0;
+
+        targetProgressRef.current = targetProgress;
+
+        startAnimation();
+      };
+
+      updateTimeTarget();
+
+      /*
+       * Нет смысла пересчитывать время
+       * 60 раз в секунду.
+       */
+      timeInterval = window.setInterval(updateTimeTarget, 250);
+    } else {
       updateScrollTarget();
 
       window.addEventListener('scroll', updateScrollTarget, {
@@ -396,73 +534,18 @@ export default function TimeLine({ isStarted }: TimeLineProps) {
       window.addEventListener('resize', updateScrollTarget);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Плавная анимация сердца
-    |--------------------------------------------------------------------------
-    */
-
-    let animationFrame = 0;
-
-    const animate = () => {
-      let targetProgress = targetProgressRef.current;
-
-      /*
-      |--------------------------------------------------------------------------
-      | После Countdown — управление временем
-      |--------------------------------------------------------------------------
-      */
-
-      if (isStarted) {
-        const currentMinutes = getCurrentMinutes();
-
-        const targetLength = getTimePathLength(currentMinutes, pointPathLengths);
-
-        targetProgress = pathLength > 0 ? targetLength / pathLength : 0;
-
-        targetProgressRef.current = targetProgress;
-      }
-
-      /*
-      |--------------------------------------------------------------------------
-      | Плавное приближение
-      |--------------------------------------------------------------------------
-      */
-
-      const currentProgress = currentProgressRef.current;
-
-      const nextProgress = currentProgress + (targetProgress - currentProgress) * HEART_SMOOTHING;
-
-      currentProgressRef.current = nextProgress;
-
-      /*
-      |--------------------------------------------------------------------------
-      | Реальная точка на SVG path
-      |--------------------------------------------------------------------------
-      */
-
-      const currentLength = pathLength * nextProgress;
-
-      const point = pathElement.getPointAtLength(currentLength);
-
-      setProgress(nextProgress);
-
-      setHeartPosition({
-        x: point.x,
-        y: point.y,
-      });
-
-      animationFrame = requestAnimationFrame(animate);
-    };
-
-    animationFrame = requestAnimationFrame(animate);
-
     return () => {
-      cancelAnimationFrame(animationFrame);
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+      }
 
       window.removeEventListener('scroll', updateScrollTarget);
 
       window.removeEventListener('resize', updateScrollTarget);
+
+      if (timeInterval !== null) {
+        window.clearInterval(timeInterval);
+      }
 
       if (scrollStopTimeoutRef.current !== null) {
         window.clearTimeout(scrollStopTimeoutRef.current);
@@ -481,7 +564,13 @@ export default function TimeLine({ isStarted }: TimeLineProps) {
   */
 
   useEffect(() => {
-    const items = document.querySelectorAll<HTMLElement>('.timeline__item');
+    const root = viewportRef.current;
+
+    if (!root) {
+      return;
+    }
+
+    const items = root.querySelectorAll<HTMLElement>('.timeline__item');
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -520,18 +609,6 @@ export default function TimeLine({ isStarted }: TimeLineProps) {
 
   /*
   |--------------------------------------------------------------------------
-  | Доли точек относительно реальной длины path
-  |--------------------------------------------------------------------------
-  */
-
-  const pathLength = pathRef.current?.getTotalLength() ?? 1;
-
-  const pointPathLengths = pathRef.current
-    ? getPointPathLengths(pathRef.current, points)
-    : points.map((_, index) => (index / (points.length - 1)) * pathLength);
-
-  /*
-  |--------------------------------------------------------------------------
   | Render
   |--------------------------------------------------------------------------
   */
@@ -564,7 +641,7 @@ export default function TimeLine({ isStarted }: TimeLineProps) {
               {/* Пройденная часть */}
 
               <path
-                ref={pathRef}
+                ref={progressPathRef}
                 d={path}
                 className="
                   timeline__path
@@ -573,37 +650,42 @@ export default function TimeLine({ isStarted }: TimeLineProps) {
                 pathLength={1}
                 style={{
                   strokeDasharray: 1,
-                  strokeDashoffset: 1 - progress,
+                  strokeDashoffset: 1,
+                }}
+              />
+
+              {/* Точка измерения path */}
+
+              <path
+                ref={pathRef}
+                d={path}
+                pathLength={undefined}
+                fill="none"
+                stroke="none"
+                aria-hidden="true"
+                pointerEvents="none"
+                style={{
+                  position: 'absolute',
+                  opacity: 0,
                 }}
               />
             </svg>
 
             {/* Точки */}
 
-            {points.map((point, index) => {
-              const pointProgress = pointPathLengths[index] / pathLength;
-
-              const isCurrent = Math.abs(progress - pointProgress) < 0.003;
-
-              const isPassed = progress > pointProgress;
-
-              return (
-                <div
-                  className={[
-                    'timeline__point',
-                    isPassed ? 'timeline__point--passed' : '',
-                    isCurrent ? 'timeline__point--current' : '',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                  key={`point-${index}`}
-                  style={{
-                    left: `${(point.x / SVG_WIDTH) * 100}%`,
-                    top: `${point.y}px`,
-                  }}
-                />
-              );
-            })}
+            {points.map((point, index) => (
+              <div
+                ref={(element) => {
+                  pointRefs.current[index] = element;
+                }}
+                className="timeline__point"
+                key={`point-${index}`}
+                style={{
+                  left: `${(point.x / SVG_WIDTH) * 100}%`,
+                  top: `${point.y}px`,
+                }}
+              />
+            ))}
 
             {/* События */}
 
@@ -650,14 +732,14 @@ export default function TimeLine({ isStarted }: TimeLineProps) {
 
             {/* Сердце */}
 
-            <div
-              className={['timeline__heart', heartBeat ? 'timeline__heart--beat' : ''].filter(Boolean).join(' ')}
-              style={{
-                left: `${(heartPosition.x / SVG_WIDTH) * 100}%`,
-                top: `${heartPosition.y}px`,
-              }}
-            >
-              ♥
+            <div ref={heartRef} className="timeline__heart">
+              <span
+                className={['timeline__heart-inner', heartBeat ? 'timeline__heart-inner--beat' : '']
+                  .filter(Boolean)
+                  .join(' ')}
+              >
+                ♥
+              </span>
             </div>
           </div>
         </div>
