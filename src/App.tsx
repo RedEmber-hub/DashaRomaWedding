@@ -41,6 +41,10 @@ export default function App() {
         <h1 className="app__timeline-title">Свадебное расписание</h1>
 
         <TimeLine isStarted={isTimelineStarted} />
+
+        <div className="app__flowers" aria-hidden="true">
+          <img src="/timeline-1200.png" alt="" />
+        </div>
       </div>
     </div>
   );
