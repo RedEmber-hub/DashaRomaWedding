@@ -4,6 +4,7 @@ import './App.scss';
 
 import TimeLine from './components/TimeLine/TimeLine';
 import Countdown from './components/Countdown/Countdown';
+import timelineFlowers from './assets/img/timeline-1200.png';
 
 export default function App() {
   const [isTimelineStarted, setIsTimelineStarted] = useState(false);
@@ -43,7 +44,7 @@ export default function App() {
         <TimeLine isStarted={isTimelineStarted} />
 
         <div className="app__flowers" aria-hidden="true">
-          <img src="/timeline-1200.png" alt="" />
+          <img src={timelineFlowers} alt="" />
         </div>
       </div>
     </div>

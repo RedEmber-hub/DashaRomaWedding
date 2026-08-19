@@ -3,6 +3,12 @@ import type { CSSProperties } from 'react';
 
 import './TimeLine.scss';
 
+import ringsIcon from '../../assets/icon/rings.svg';
+import drinkIcon from '../../assets/icon/drink.svg';
+import cameraIcon from '../../assets/icon/camera.svg';
+import dishIcon from '../../assets/icon/dish.svg';
+import fireworkIcon from '../../assets/icon/firework.svg';
+
 type TimeLineEvent = {
   time: string;
   title: string;
@@ -19,68 +25,44 @@ const events: TimeLineEvent[] = [
     time: '10:20',
     title: 'Торжественная регистрация',
     description: 'Будем рады разделить с вами этот важный и трогательный момент.',
-    image: '/rings.svg',
+    image: ringsIcon,
   },
   {
     time: '12:00',
     title: 'Фуршет',
     description: 'Время для общения, лёгких закусок и тёплых поздравлений.',
-    image: '/drink.svg',
+    image: drinkIcon,
   },
   {
     time: '13:00',
     title: 'Фотосессия',
     description: 'Сохраним самые красивые моменты этого дня на фотографиях.',
-    image: '/camera.svg',
+    image: cameraIcon,
   },
   {
     time: '16:00',
     title: 'Праздничный банкет',
     description: 'Ужин, музыка, танцы и продолжение нашего праздника.',
-    image: '/dish.svg',
+    image: dishIcon,
   },
   {
     time: '21:00',
     title: 'Окончание праздничного дня',
     description: 'Спасибо, что были рядом и разделили этот день вместе с нами.',
-    image: '/firework.svg',
+    image: fireworkIcon,
   },
 ];
-
-/*
-|--------------------------------------------------------------------------
-| Базовая геометрия таймлайна
-|--------------------------------------------------------------------------
-*/
 
 const SVG_WIDTH = 800;
 const POINT_GAP = 320;
 const CENTER_X = SVG_WIDTH / 2;
 const CURVE_OFFSET = 70;
 
-/*
-|--------------------------------------------------------------------------
-| Плавность сердца
-|--------------------------------------------------------------------------
-*/
-
 const HEART_SMOOTHING = 0.08;
 const HEART_EPSILON = 0.0005;
 
-/*
-|--------------------------------------------------------------------------
-| Удар сердца
-|--------------------------------------------------------------------------
-*/
-
 const HEART_BEAT_DELAY = 120;
 const HEART_BEAT_DURATION = 450;
-
-/*
-|--------------------------------------------------------------------------
-| Создание точек
-|--------------------------------------------------------------------------
-*/
 
 function createPoints(count: number) {
   return Array.from({ length: count }, (_, index) => {
@@ -99,12 +81,6 @@ function createPoints(count: number) {
     };
   });
 }
-
-/*
-|--------------------------------------------------------------------------
-| Создание плавной линии
-|--------------------------------------------------------------------------
-*/
 
 function createPath(points: { x: number; y: number }[]) {
   if (points.length < 2) {
@@ -130,35 +106,17 @@ function createPath(points: { x: number; y: number }[]) {
   return path;
 }
 
-/*
-|--------------------------------------------------------------------------
-| HH:MM → минуты
-|--------------------------------------------------------------------------
-*/
-
 function timeToMinutes(time: string) {
   const [hours, minutes] = time.split(':').map(Number);
 
   return hours * 60 + minutes;
 }
 
-/*
-|--------------------------------------------------------------------------
-| Текущее время
-|--------------------------------------------------------------------------
-*/
-
 function getCurrentMinutes() {
   const now = new Date();
 
   return now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60 + now.getMilliseconds() / 60000;
 }
-
-/*
-|--------------------------------------------------------------------------
-| Находим длину path в конкретной точке Y
-|--------------------------------------------------------------------------
-*/
 
 function getPathLengthAtY(path: SVGPathElement, targetY: number) {
   const totalLength = path.getTotalLength();
@@ -180,21 +138,9 @@ function getPathLengthAtY(path: SVGPathElement, targetY: number) {
   return (low + high) / 2;
 }
 
-/*
-|--------------------------------------------------------------------------
-| Реальные длины path в точках событий
-|--------------------------------------------------------------------------
-*/
-
 function getPointPathLengths(path: SVGPathElement, points: { x: number; y: number }[]) {
   return points.map((point) => getPathLengthAtY(path, point.y));
 }
-
-/*
-|--------------------------------------------------------------------------
-| Время → длина path
-|--------------------------------------------------------------------------
-*/
 
 function getTimePathLength(currentMinutes: number, pathLengths: number[]) {
   const firstTime = timeToMinutes(events[0].time);
@@ -225,12 +171,6 @@ function getTimePathLength(currentMinutes: number, pathLengths: number[]) {
   return pathLengths[0];
 }
 
-/*
-|--------------------------------------------------------------------------
-| Scroll → progress
-|--------------------------------------------------------------------------
-*/
-
 function getScrollProgress(canvas: HTMLElement) {
   const rect = canvas.getBoundingClientRect();
 
@@ -240,12 +180,6 @@ function getScrollProgress(canvas: HTMLElement) {
 
   return Math.max(0, Math.min(progress, 1));
 }
-
-/*
-|--------------------------------------------------------------------------
-| Компонент
-|--------------------------------------------------------------------------
-*/
 
 export default function TimeLine({ isStarted }: TimeLineProps) {
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -276,12 +210,6 @@ export default function TimeLine({ isStarted }: TimeLineProps) {
 
   const path = createPath(points);
 
-  /*
-  |--------------------------------------------------------------------------
-  | Адаптивный scale
-  |--------------------------------------------------------------------------
-  */
-
   useEffect(() => {
     const viewport = viewportRef.current;
 
@@ -308,17 +236,6 @@ export default function TimeLine({ isStarted }: TimeLineProps) {
     };
   }, []);
 
-  /*
-  |--------------------------------------------------------------------------
-  | Сердце + progress path
-  |--------------------------------------------------------------------------
-  |
-  | ВАЖНО:
-  | Здесь нет setState на каждом animation frame.
-  | Позиция сердца и SVG обновляются напрямую через DOM.
-  |--------------------------------------------------------------------------
-  */
-
   useEffect(() => {
     const pathElement = pathRef.current;
     const progressPathElement = progressPathRef.current;
@@ -338,39 +255,15 @@ export default function TimeLine({ isStarted }: TimeLineProps) {
     let isAnimating = false;
     let lastRenderedProgress = -1;
 
-    /*
-    |--------------------------------------------------------------------------
-    | Обновление DOM
-    |--------------------------------------------------------------------------
-    */
-
     const updateVisuals = (nextProgress: number) => {
       const currentLength = pathLength * nextProgress;
 
       const point = pathElement.getPointAtLength(currentLength);
 
-      /*
-       * Пройденная часть линии.
-       *
-       * pathLength="1" позволяет использовать
-       * progress напрямую в диапазоне 0..1.
-       */
       progressPathElement.style.strokeDashoffset = String(1 - nextProgress);
 
-      /*
-       * Положение сердца.
-       *
-       * translate3d вместо left/top:
-       * движение выполняется через transform.
-       */
       heartElement.style.transform = `translate3d(${point.x}px, ${point.y}px, 0) ` + 'translate3d(-50%, -50%, 0)';
     };
-
-    /*
-    |--------------------------------------------------------------------------
-    | Обновление точек без React render
-    |--------------------------------------------------------------------------
-    */
 
     const updatePoints = (nextProgress: number) => {
       pointPathLengths.forEach((pointPathLength, index) => {
@@ -392,12 +285,6 @@ export default function TimeLine({ isStarted }: TimeLineProps) {
       });
     };
 
-    /*
-    |--------------------------------------------------------------------------
-    | Запуск RAF только когда действительно есть движение
-    |--------------------------------------------------------------------------
-    */
-
     const animate = () => {
       const targetProgress = targetProgressRef.current;
 
@@ -405,10 +292,6 @@ export default function TimeLine({ isStarted }: TimeLineProps) {
 
       const difference = targetProgress - currentProgress;
 
-      /*
-       * Сердце практически дошло до цели.
-       * Останавливаем RAF.
-       */
       if (Math.abs(difference) < HEART_EPSILON) {
         currentProgressRef.current = targetProgress;
 
@@ -427,10 +310,6 @@ export default function TimeLine({ isStarted }: TimeLineProps) {
 
       currentProgressRef.current = nextProgress;
 
-      /*
-       * Не делаем лишний DOM update,
-       * если изменение слишком маленькое.
-       */
       if (Math.abs(nextProgress - lastRenderedProgress) > 0.0001) {
         updateVisuals(nextProgress);
         updatePoints(nextProgress);
@@ -450,12 +329,6 @@ export default function TimeLine({ isStarted }: TimeLineProps) {
 
       animationFrame = requestAnimationFrame(animate);
     };
-
-    /*
-    |--------------------------------------------------------------------------
-    | Heartbeat
-    |--------------------------------------------------------------------------
-    */
 
     const scheduleHeartbeat = () => {
       if (scrollStopTimeoutRef.current !== null) {
@@ -477,12 +350,6 @@ export default function TimeLine({ isStarted }: TimeLineProps) {
       }, HEART_BEAT_DELAY);
     };
 
-    /*
-    |--------------------------------------------------------------------------
-    | Scroll
-    |--------------------------------------------------------------------------
-    */
-
     const updateScrollTarget = () => {
       if (isStarted) {
         return;
@@ -495,12 +362,6 @@ export default function TimeLine({ isStarted }: TimeLineProps) {
       startAnimation();
       scheduleHeartbeat();
     };
-
-    /*
-    |--------------------------------------------------------------------------
-    | После Countdown — управление временем
-    |--------------------------------------------------------------------------
-    */
 
     let timeInterval: number | null = null;
 
@@ -519,10 +380,6 @@ export default function TimeLine({ isStarted }: TimeLineProps) {
 
       updateTimeTarget();
 
-      /*
-       * Нет смысла пересчитывать время
-       * 60 раз в секунду.
-       */
       timeInterval = window.setInterval(updateTimeTarget, 250);
     } else {
       updateScrollTarget();
@@ -556,12 +413,6 @@ export default function TimeLine({ isStarted }: TimeLineProps) {
       }
     };
   }, [isStarted, scale]);
-
-  /*
-  |--------------------------------------------------------------------------
-  | Анимация появления событий
-  |--------------------------------------------------------------------------
-  */
 
   useEffect(() => {
     const root = viewportRef.current;
@@ -607,12 +458,6 @@ export default function TimeLine({ isStarted }: TimeLineProps) {
     };
   }, []);
 
-  /*
-  |--------------------------------------------------------------------------
-  | Render
-  |--------------------------------------------------------------------------
-  */
-
   return (
     <section ref={viewportRef} className="timeline">
       <div
@@ -631,14 +476,8 @@ export default function TimeLine({ isStarted }: TimeLineProps) {
           }}
         >
           <div className="timeline__inner">
-            {/* Линия */}
-
             <svg className="timeline__svg" viewBox={`0 0 ${SVG_WIDTH} ${timelineHeight}`} aria-hidden="true">
-              {/* Вся линия */}
-
               <path d={path} className="timeline__path" />
-
-              {/* Пройденная часть */}
 
               <path
                 ref={progressPathRef}
@@ -654,12 +493,9 @@ export default function TimeLine({ isStarted }: TimeLineProps) {
                 }}
               />
 
-              {/* Точка измерения path */}
-
               <path
                 ref={pathRef}
                 d={path}
-                pathLength={undefined}
                 fill="none"
                 stroke="none"
                 aria-hidden="true"
@@ -670,8 +506,6 @@ export default function TimeLine({ isStarted }: TimeLineProps) {
                 }}
               />
             </svg>
-
-            {/* Точки */}
 
             {points.map((point, index) => (
               <div
@@ -686,8 +520,6 @@ export default function TimeLine({ isStarted }: TimeLineProps) {
                 }}
               />
             ))}
-
-            {/* События */}
 
             {events.map((event, index) => {
               const point = points[index];
@@ -729,8 +561,6 @@ export default function TimeLine({ isStarted }: TimeLineProps) {
                 </article>
               );
             })}
-
-            {/* Сердце */}
 
             <div ref={heartRef} className="timeline__heart">
               <span
