@@ -4,7 +4,6 @@ import type { CSSProperties } from 'react';
 import './TimeLine.scss';
 
 import ringsIcon from '../../assets/icon/rings.svg';
-import drinkIcon from '../../assets/icon/drink.svg';
 import cameraIcon from '../../assets/icon/camera.svg';
 import dishIcon from '../../assets/icon/dish.svg';
 import fireworkIcon from '../../assets/icon/firework.svg';
