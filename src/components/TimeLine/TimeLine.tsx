@@ -22,19 +22,13 @@ type TimeLineProps = {
 
 const events: TimeLineEvent[] = [
   {
-    time: '10:20',
+    time: '10:40',
     title: 'Торжественная регистрация',
     description: 'Будем рады разделить с вами этот важный и трогательный момент.',
     image: ringsIcon,
   },
   {
     time: '12:00',
-    title: 'Фуршет',
-    description: 'Время для общения, лёгких закусок и тёплых поздравлений.',
-    image: drinkIcon,
-  },
-  {
-    time: '13:00',
     title: 'Фотосессия',
     description: 'Сохраним самые красивые моменты этого дня на фотографиях.',
     image: cameraIcon,
@@ -46,7 +40,7 @@ const events: TimeLineEvent[] = [
     image: dishIcon,
   },
   {
-    time: '21:00',
+    time: '23:00',
     title: 'Окончание праздничного дня',
     description: 'Спасибо, что были рядом и разделили этот день вместе с нами.',
     image: fireworkIcon,
